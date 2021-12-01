@@ -144,6 +144,10 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
+
+
+
+
     /// create temp file
     private File createImageFile() throws IOException {
         // Create an image file name
