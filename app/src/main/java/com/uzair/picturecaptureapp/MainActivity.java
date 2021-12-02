@@ -5,6 +5,7 @@ import static java.util.UUID.randomUUID;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.ActivityResultRegistry;
+import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +14,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -144,10 +147,6 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
-
-
-
-
     /// create temp file
     private File createImageFile() throws IOException {
         // Create an image file name
@@ -199,25 +198,46 @@ public class MainActivity extends AppCompatActivity {
 
     /// request for permission
     private void requestPermission() {
-        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, CAMERA_REQUEST_CODE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", getPackageName(), null));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                permissionIntent.launch(intent);
+
+
+            } catch (Exception e) {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", getPackageName(), null));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                permissionIntent.launch(intent);
+            }
+        } else {
+//
+
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, CAMERA_REQUEST_CODE);
+        }
     }
+
+
+    /// permission intent for android version 11+
+    private ActivityResultLauncher<Intent> permissionIntent =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == Activity.RESULT_OK)
+                            Toast.makeText(MainActivity.this, "Permission Granted", Toast.LENGTH_SHORT).show();
+                    });
 
     /// check camera permission
     private boolean isPermissionEnable() {
+
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             return true;
         }
+
         return false;
-    }
-
-    /// convert image to byte array
-    private void convertImageToByteArray(Bitmap bitmap) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); // bm is the bitmap object
-        byte[] imageByteArray = baos.toByteArray();
-
     }
 
 
